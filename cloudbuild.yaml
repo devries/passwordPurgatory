@@ -1,0 +1,9 @@
+steps:
+  - name: 'gcr.io/$PROJECT_ID/pack'
+    args: ["build", "--builder", "paketobuildpacks/builder:tiny", "us-central1-docker.pkg.dev/$PROJECT_ID/playground/passwordPurgatory:$BRANCH_NAME"]
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/playground/passwordPurgatory:$BRANCH_NAME']
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['run', 'deploy', 'passwordPurgatory', '--image','us-central1-docker.pkg.dev/$PROJECT_ID/playground/passwordPurgatory:$BRANCH_NAME', '--concurrency', '80', '--platform', 'managed', '--region', 'us-central1', '--max-instances', '4', '--memory', '256Mi']
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/playground/passwordPurgatory:$BRANCH_NAME'
