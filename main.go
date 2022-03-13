@@ -50,6 +50,12 @@ func NewQueryHandler() QueryHandler {
 			}
 			return nil
 		},
+		func(password string) error {
+			if utf8.RuneCountInString(password) > 20 {
+				return errors.New("Password must be less than 21 characters long")
+			}
+			return nil
+		},
 		regexpMatcher(`[0-9]`, "Password must contain at least 1 number"),
 		regexpMatcher(`[a-z]`, "Password must contain at least 1 lowercase letter"),
 		regexpMatcher(`[A-Z]`, "Password must contain at least 1 uppercase letter"),
@@ -60,6 +66,7 @@ func NewQueryHandler() QueryHandler {
 			}
 			return nil
 		},
+		regexpMatcher("[\u0370-\u03ff\u1f00-\u1fff]", "Password must contain at least 1 greek letter"),
 		regexpMatcher(`:‑\)|:\)|:\-\]|:\]|:>|:\-\}|:\}|:o\)\)|:\^\)|=\]|=\)|:\]|:\->|:>|8\-\)|:\-\}|:\}|:o\)|:\^\)|=\]|=\)|:‑D|:D|B\^D|:‑\(|:\(|:‑<|:<|:‑\[|:\[|:\-\|\||>:\[|:\{|:\(|;\(|:\'‑\(|:\'\(|:=\(|:\'‑\)|:\'\)|:"D|:‑O|:O|:‑o|:o|:\-0|>:O|>:3|;‑\)|;\)|;‑\]|;\^\)|:‑P|:\-\/|:\/|:‑\.|>:|>:\/|:|:‑\||:\||>:‑\)|>:\)|\}:‑\)|>;‑\)|>;\)|>:3|\|;‑\)|:‑J|<:‑\||~:>`, "Password must contain at least 1 emoticon"),
 	}
 
