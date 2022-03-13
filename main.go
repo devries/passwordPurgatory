@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -67,6 +68,33 @@ func NewQueryHandler() QueryHandler {
 			return nil
 		},
 		regexpMatcher("[\u0370-\u03ff\u1f00-\u1fff]", "Password must contain at least 1 greek letter"),
+		func(password string) error {
+			re := regexp.MustCompile(`\d`)
+			last := 10
+			digits := re.FindAllString(password, -1)
+			for _, v := range digits {
+				vi, _ := strconv.Atoi(v)
+				if vi > last {
+					return errors.New("Each digit in the password must be less than or equal to all previous digits")
+				}
+				last = vi
+			}
+			return nil
+		},
+		regexpMatcher(`[\x{1F600}-\x{1F6FF}|[\x{2600}-\x{26FF}]`, "Password must contain at least 1 emoji"),
+		regexpMatcher(`Luna|Deimos|Phobos|Amalthea|Callisto|Europa|Ganymede|Io|Dione|Enceladus|Hyperion|Iapetus|Mimas|Phoebe|Rhea|Tethys|Titan|Ariel|Miranda|Oberon|Titania|Umbriel|Nereid|Triton|Charon|Himalia|Carme|Ananke|Adrastea|Elara|Adrastea|Elara|Epimetheus|Callirrhoe|Kalyke|Thebe|Methone|Kiviuq|Ijiraq|Paaliaq|Albiorix|Erriapus|Pallene|Polydeuces|Bestla|Daphnis|Despina|Puck|Carpo|Pasiphae|Themisto|Cyllene|Isonoe|Harpalyke|Hermippe|Iocaste|Chaldene|Euporie`, "Password must contain at least one named planetary satellite from our solar system"),
+		func(password string) error {
+			re := regexp.MustCompile(`[^0-9]`)
+			digits := re.ReplaceAllString(password, "")
+			val, err := strconv.Atoi(digits)
+			if err != nil {
+				return err
+			}
+			if val%3 != 0 {
+				return errors.New("Password, when stripped of non-numeric characters, must be a number divisible by 3")
+			}
+			return nil
+		},
 		regexpMatcher(`:‑\)|:\)|:\-\]|:\]|:>|:\-\}|:\}|:o\)\)|:\^\)|=\]|=\)|:\]|:\->|:>|8\-\)|:\-\}|:\}|:o\)|:\^\)|=\]|=\)|:‑D|:D|B\^D|:‑\(|:\(|:‑<|:<|:‑\[|:\[|:\-\|\||>:\[|:\{|:\(|;\(|:\'‑\(|:\'\(|:=\(|:\'‑\)|:\'\)|:"D|:‑O|:O|:‑o|:o|:\-0|>:O|>:3|;‑\)|;\)|;‑\]|;\^\)|:‑P|:\-\/|:\/|:‑\.|>:|>:\/|:|:‑\||:\||>:‑\)|>:\)|\}:‑\)|>;‑\)|>;\)|>:3|\|;‑\)|:‑J|<:‑\||~:>`, "Password must contain at least 1 emoticon"),
 	}
 
