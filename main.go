@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -38,19 +40,26 @@ func NewQueryHandler() QueryHandler {
 	ptest := []PasswordTest{
 		func(password string) error {
 			if password == "" {
-				return fmt.Errorf("No password was provided")
+				return errors.New("No password was provided")
 			}
 			return nil
 		},
 		func(password string) error {
 			if utf8.RuneCountInString(password) < 12 {
-				return fmt.Errorf("Password must be at least 12 characters long")
+				return errors.New("Password must be at least 12 characters long")
 			}
 			return nil
 		},
 		regexpMatcher(`[0-9]`, "Password must contain at least 1 number"),
 		regexpMatcher(`[a-z]`, "Password must contain at least 1 lowercase letter"),
 		regexpMatcher(`[A-Z]`, "Password must contain at least 1 uppercase letter"),
+		regexpMatcher(`!|"|#|\$|%|&|'|\*|\+|\?`, "Password must contain at least one of the following special characters: !, \", #, $, %, &, ', +, or ?"),
+		func(password string) error {
+			if strings.ContainsAny(password, "^()[]@") {
+				return errors.New("Password must not contain any of the following special characters: ^, (, ), [, ], or @")
+			}
+			return nil
+		},
 		regexpMatcher(`:‑\)|:\)|:\-\]|:\]|:>|:\-\}|:\}|:o\)\)|:\^\)|=\]|=\)|:\]|:\->|:>|8\-\)|:\-\}|:\}|:o\)|:\^\)|=\]|=\)|:‑D|:D|B\^D|:‑\(|:\(|:‑<|:<|:‑\[|:\[|:\-\|\||>:\[|:\{|:\(|;\(|:\'‑\(|:\'\(|:=\(|:\'‑\)|:\'\)|:"D|:‑O|:O|:‑o|:o|:\-0|>:O|>:3|;‑\)|;\)|;‑\]|;\^\)|:‑P|:\-\/|:\/|:‑\.|>:|>:\/|:|:‑\||:\||>:‑\)|>:\)|\}:‑\)|>;‑\)|>;\)|>:3|\|;‑\)|:‑J|<:‑\||~:>`, "Password must contain at least 1 emoticon"),
 	}
 
@@ -78,7 +87,7 @@ func regexpMatcher(expression string, message string) PasswordTest {
 	re := regexp.MustCompile(expression)
 	return func(password string) error {
 		if !re.MatchString(password) {
-			return fmt.Errorf(message)
+			return errors.New(message)
 		}
 		return nil
 	}
