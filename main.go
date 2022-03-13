@@ -80,6 +80,7 @@ func (q QueryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	for _, f := range q {
 		err := f(password)
+		log.Printf("Attempt: %s, Error: %s", password, err)
 		if err != nil {
 			jr := JsonMessage{err.Error()}
 			jr.WriteResponse(w, 200)
@@ -87,6 +88,7 @@ func (q QueryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	catchAll := JsonMessage{"This password has already been used by another user"}
+	log.Printf("Attempt: %s, Evaded issues", password)
 	catchAll.WriteResponse(w, 200)
 }
 
