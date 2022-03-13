@@ -59,10 +59,10 @@ func NewQueryHandler() QueryHandler {
 		regexpMatcher(`[0-9]`, "Password must contain at least 1 number"),
 		regexpMatcher(`[a-z]`, "Password must contain at least 1 lowercase letter"),
 		regexpMatcher(`[A-Z]`, "Password must contain at least 1 uppercase letter"),
-		regexpMatcher(`!|"|#|\$|%|&|'|\*|\+|\?`, "Password must contain at least one of the following special characters: !, \", #, $, %, &, ', +, or ?"),
+		regexpMatcher(`!|"|#|\$|%|&|'|\+|\?`, "Password must contain at least one of the following special characters: !, \", #, $, %, &, ', +, or ?"),
 		func(password string) error {
-			if strings.ContainsAny(password, "^()[]@") {
-				return errors.New("Password must not contain any of the following special characters: ^, (, ), [, ], or @")
+			if strings.ContainsAny(password, "^*@") {
+				return errors.New("Password must not contain any of the following special characters: ^, *, or @")
 			}
 			return nil
 		},
