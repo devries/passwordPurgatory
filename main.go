@@ -80,8 +80,8 @@ func (q QueryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	for _, f := range q {
 		err := f(password)
-		log.Printf("Attempt: %s, Error: %s", password, err)
 		if err != nil {
+			log.Printf("Attempt: %s, Error: %s", password, err)
 			jr := JsonMessage{err.Error()}
 			jr.WriteResponse(w, 200)
 			return
