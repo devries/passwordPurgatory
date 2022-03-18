@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -105,11 +106,13 @@ func (q QueryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	password := query.Get("password")
 	w.Header().Set("Access-Control-Allow-Origin", "*") // set CORS
+	ctx := r.Context()
+	clientAddr, _ := ClientAddress(ctx)
 
 	for _, f := range q {
 		err := f(password)
 		if err != nil {
-			log.Printf("Attempt: %s, Error: %s", password, err)
+			log.Printf("%s Attempt: %s, Error: %s", clientAddr, password, err)
 			jr := JsonMessage{err.Error()}
 			jr.WriteResponse(w, 200)
 			return
@@ -158,14 +161,30 @@ func (rec *statusRecorder) Write(p []byte) (int, error) {
 	return bc, err
 }
 
+type contextKey string
+
+func (c contextKey) String() string {
+	return fmt.Sprintf("context key %s", string(c))
+}
+
+var (
+	contextKeyClientAddress = contextKey("client-address")
+)
+
+func ClientAddress(ctx context.Context) (string, bool) {
+	tokenStr, ok := ctx.Value(contextKeyClientAddress).(string)
+	return tokenStr, ok
+}
+
 func loggingHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		rec := statusRecorder{w, 200, 0}
-		next.ServeHTTP(&rec, req)
 		remoteAddr := req.Header.Get("X-Forwarded-For")
 		if remoteAddr == "" {
 			remoteAddr = req.RemoteAddr
 		}
+		ctx := context.WithValue(req.Context(), contextKeyClientAddress, remoteAddr)
+		next.ServeHTTP(&rec, req.WithContext(ctx))
 		ua := req.Header.Get("User-Agent")
 
 		log.Printf("%s - \"%s %s %s\" (%s) %d %d \"%s\"", remoteAddr, req.Method, req.URL.Path, req.Proto, req.Host, rec.status, rec.byteCount, ua)
