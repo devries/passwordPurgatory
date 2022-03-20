@@ -52,6 +52,7 @@ steps:
       - '4'
       - '--memory'
       - '256Mi'
+    id: deploy-cloud-run
 options:
   env:
     - DOCKER_CLI_EXPERIMENTAL=enabled
