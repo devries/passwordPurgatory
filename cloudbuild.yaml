@@ -1,9 +1,57 @@
 steps:
-  - name: 'gcr.io/$PROJECT_ID/pack'
-    args: ["build", "--builder", "paketobuildpacks/builder:tiny", "us-central1-docker.pkg.dev/$PROJECT_ID/playground/passpurg:$BRANCH_NAME"]
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/playground/passpurg:$BRANCH_NAME']
+    args:
+      - run
+      - '--privileged'
+      - 'linuxkit/binfmt:v0.8'
+    id: initialize-qemu
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - buildx
+      - create
+      - '--name'
+      - mybuilder
+    id: create-builder
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - buildx
+      - use
+      - mybuilder
+    id: select-builder
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - buildx
+      - inspect
+      - '--bootstrap'
+    id: show-target-build-platforms
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - buildx
+      - build
+      - '--platform'
+      - 'linux/amd64,linux/arm64,linux/arm/v7'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/playground/passpurg:$BRANCH_NAME'
+      - '--push'
+      - .
+    id: build-multiarch-container-image
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'purgatory', '--image','us-central1-docker.pkg.dev/$PROJECT_ID/playground/passpurg:$BRANCH_NAME', '--concurrency', '80', '--platform', 'managed', '--region', 'us-central1', '--max-instances', '4', '--memory', '256Mi']
-images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/playground/passpurg:$BRANCH_NAME'
+    args:
+      - run
+      - deploy
+      - purgatory
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/playground/passpurg:$BRANCH_NAME'
+      - '--concurrency'
+      - '80'
+      - '--platform'
+      - 'managed'
+      - '--region'
+      - 'us-central1'
+      - '--max-instances'
+      - '4'
+      - '--memory'
+      - '256Mi'
+options:
+  env:
+    - DOCKER_CLI_EXPERIMENTAL=enabled
