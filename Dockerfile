@@ -1,13 +1,13 @@
-FROM --platform=$BUILDPLATFORM golang:1.18 as build
+FROM --platform=$BUILDPLATFORM cgr.dev/chainguard/go:latest as build
 WORKDIR /src
 COPY go.mod .
 RUN go mod download
 ARG TARGETOS TARGETARCH
 COPY . .
 RUN set -x && \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /out/goapp
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o goapp
 
-FROM gcr.io/distroless/static-debian11:nonroot
-COPY --from=build /out/goapp /app/goapp
+FROM cgr.dev/chainguard/static:latest
+COPY --from=build /src/goapp /app/goapp
 WORKDIR /app
 CMD ["/app/goapp"]
